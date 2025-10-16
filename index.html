@@ -1,22 +1,249 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Calculator</title>
     <style>
-        /* CSS will go here */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .calculator {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            width: 320px;
+            box-sizing: border-box;
+        }
+
+        #display {
+            width: 100%;
+            height: 60px;
+            background-color: #e8e8e8;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            font-size: 2.2em;
+            text-align: right;
+            color: #333;
+            box-sizing: border-box;
+            outline: none;
+            -webkit-appearance: none; /* Remove default styling on iOS */
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            width: 100%;
+            height: 65px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .number, .decimal {
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        .number:hover, .decimal:hover {
+            background-color: #e0e0e0;
+        }
+
+        .operator {
+            background-color: #ff9500;
+            color: #ffffff;
+        }
+
+        .operator:hover {
+            background-color: #e08000;
+        }
+
+        #clear {
+            background-color: #ff3b30;
+            color: #ffffff;
+        }
+
+        #clear:hover {
+            background-color: #e03028;
+        }
+
+        #equals {
+            background-color: #4cd964;
+            color: #ffffff;
+        }
+
+        #equals:hover {
+            background-color: #40c058;
+        }
+
+        /* Make '0' button span two columns */
+        .buttons .zero {
+            grid-column: span 2;
+        }
     </style>
 </head>
 <body>
-    <div id="calculator">
-        <input type="text" id="display" readonly>
+    <div class="calculator">
+        <input type="text" id="display" value="0" readonly>
         <div class="buttons">
-            <!-- Numbers and operations -->
+            <button id="clear">C</button>
+            <button class="operator" data-value="/">/</button>
+            <button class="operator" data-value="*">*</button>
+            <button class="operator" data-value="-">-</button>
+
+            <button class="number" data-value="7">7</button>
+            <button class="number" data-value="8">8</button>
+            <button class="number" data-value="9">9</button>
+            <button class="operator" data-value="+">+</button>
+
+            <button class="number" data-value="4">4</button>
+            <button class="number" data-value="5">5</button>
+            <button class="number" data-value="6">6</button>
+            <button class="decimal" data-value=".">.</button>
+
+            <button class="number" data-value="1">1</button>
+            <button class="number" data-value="2">2</button>
+            <button class="number" data-value="3">3</button>
+            <button id="equals">=</button>
+            
+            <button class="number zero" data-value="0">0</button>
         </div>
     </div>
+
     <script>
-        // JavaScript will go here
+        const display = document.getElementById('display');
+        const buttons = document.querySelectorAll('.buttons button');
+        let currentInput = '';
+        let resultDisplayed = false; // Flag to indicate if a result is currently shown
+
+        display.value = '0'; // Initial display
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                const value = button.dataset.value;
+                const isNumberOrDecimal = button.classList.contains('number') || button.classList.contains('decimal');
+                const isOperator = button.classList.contains('operator');
+                const operators = ['+', '-', '*', '/'];
+
+                if (button.id === 'clear') {
+                    currentInput = '';
+                    display.value = '0';
+                    resultDisplayed = false;
+                    return;
+                }
+
+                if (button.id === 'equals') {
+                    if (currentInput === '') {
+                        display.value = '0';
+                        return;
+                    }
+                    try {
+                        // Remove trailing operators before evaluation
+                        let expression = currentInput;
+                        while (operators.includes(expression.slice(-1))) {
+                            expression = expression.slice(0, -1);
+                        }
+                        
+                        if (expression === '') { // If only operators were entered or cleared by trimming
+                            display.value = '0';
+                            currentInput = '';
+                            resultDisplayed = false;
+                            return;
+                        }
+
+                        let result = eval(expression);
+
+                        if (isNaN(result) || !isFinite(result)) {
+                            display.value = 'Error';
+                            currentInput = '';
+                        } else {
+                            display.value = String(result);
+                            currentInput = String(result); // Allow chaining operations
+                            resultDisplayed = true;
+                        }
+                    } catch (e) {
+                        display.value = 'Error';
+                        currentInput = '';
+                    }
+                    return;
+                }
+
+                // Handle number/decimal input
+                if (isNumberOrDecimal) {
+                    if (resultDisplayed) {
+                        currentInput = value;
+                        resultDisplayed = false;
+                    } else {
+                        if (value === '.') {
+                            // Get the last segment of the currentInput (the number before the last operator)
+                            const parts = currentInput.split(/[\+\-\*\/]/);
+                            const lastNumberPart = parts[parts.length - 1];
+                            if (lastNumberPart.includes('.')) {
+                                // Already has a decimal in the current number segment, do not add another
+                                return; 
+                            }
+                            // If currentInput is empty or ends with an operator, prepend '0' for decimal
+                            if (currentInput === '' || operators.includes(currentInput.slice(-1))) {
+                                currentInput += '0.';
+                            } else {
+                                currentInput += value;
+                            }
+                        } else if (currentInput === '0' && value === '0') {
+                            // Prevent '00'
+                        } else if (currentInput === '0' && value !== '.') {
+                            currentInput = value; // Replace '0' with new number
+                        } else {
+                            currentInput += value;
+                        }
+                    }
+                } 
+                // Handle operator input
+                else if (isOperator) {
+                    if (resultDisplayed) {
+                        currentInput = String(display.value) + value;
+                        resultDisplayed = false;
+                    } else {
+                        // If currentInput is empty and operator is pressed (not unary minus), prevent it
+                        if (currentInput === '' && value !== '-') {
+                            display.value = '0';
+                            return;
+                        }
+                        // Replace last operator if consecutive
+                        const lastChar = currentInput.slice(-1);
+                        if (operators.includes(lastChar)) {
+                            currentInput = currentInput.slice(0, -1) + value;
+                        } else {
+                            currentInput += value;
+                        }
+                    }
+                }
+                
+                display.value = currentInput || '0'; // Display '0' if currentInput is empty
+            });
+        });
     </script>
 </body>
 </html>
